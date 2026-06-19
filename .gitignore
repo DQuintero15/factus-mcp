@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.turbo/
+.astro/
+.env
+.env.*
+!.env.example
+*.log
+npm-debug.log*
+pnpm-debug.log*
+.DS_Store
+coverage/
+.prisma/
+generated/
+build/
