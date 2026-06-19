@@ -1,0 +1,28 @@
+{
+  "name": "factus-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MCP server + panel for Factus API V2 (Colombian DIAN e-invoicing)",
+  "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "pnpm --filter @factus-mcp/db generate",
+    "db:migrate": "pnpm --filter @factus-mcp/db migrate",
+    "db:push": "pnpm --filter @factus-mcp/db push",
+    "format": "prettier --write \"**/*.{ts,tsx,astro,json,md}\""
+  },
+  "devDependencies": {
+    "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
+    "@types/node": "^20.14.0",
+    "prettier": "^3.3.3",
+    "prettier-plugin-astro": "^0.14.1",
+    "turbo": "^2.1.3",
+    "typescript": "^5.5.4"
+  }
+}
