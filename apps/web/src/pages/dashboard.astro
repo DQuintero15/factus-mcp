@@ -1,0 +1,176 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { createApiKey, listApiKeys, revokeApiKey, type CreatedApiKey } from '../lib/api-keys';
+import { auth } from '../lib/auth';
+
+export const prerender = false;
+
+const session = await auth.api.getSession({ headers: Astro.request.headers });
+if (!session) {
+  return Astro.redirect('/');
+}
+
+const userId = session.user.id;
+let createdKey: CreatedApiKey | null = null;
+let error: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = form.get('action');
+  try {
+    if (action === 'create') {
+      const name = String(form.get('name') ?? '').slice(0, 60);
+      createdKey = await createApiKey(userId, name);
+    } else if (action === 'revoke') {
+      await revokeApiKey(userId, String(form.get('id') ?? ''));
+    }
+  } catch {
+    error = 'No se pudo completar la operacion.';
+  }
+}
+
+const keys = await listApiKeys(userId);
+const mcpUrl = process.env.PUBLIC_MCP_URL ?? 'http://localhost:3000/mcp';
+
+const fmt = (d: Date | null) =>
+  d ? new Date(d).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+---
+
+<Layout title="Panel - Factus MCP">
+  <div class="mb-6 flex items-center justify-between">
+    <p class="text-sm text-slate-600">
+      Sesion: <span class="font-medium text-slate-900">{session.user.email}</span>
+    </p>
+    <button id="logout" class="text-sm text-slate-500 underline hover:text-slate-800" type="button">
+      Cerrar sesion
+    </button>
+  </div>
+
+  {error && <p class="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+
+  {
+    createdKey && (
+      <div class="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-4">
+        <p class="text-sm font-semibold text-amber-900">
+          Copia tu API Key ahora. No se volvera a mostrar.
+        </p>
+        <code class="mt-2 block break-all rounded-lg bg-white px-3 py-2 font-mono text-sm text-slate-800">
+          {createdKey.plainKey}
+        </code>
+      </div>
+    )
+  }
+
+  <!-- Crear API Key -->
+  <section class="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <h2 class="text-base font-semibold text-slate-900">Crear API Key MCP</h2>
+    <form method="POST" class="mt-4 flex gap-3">
+      <input type="hidden" name="action" value="create" />
+      <input
+        type="text"
+        name="name"
+        placeholder="Nombre (p.ej. Claude Code - sandbox)"
+        class="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none"
+      />
+      <button
+        type="submit"
+        class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700"
+      >
+        Crear
+      </button>
+    </form>
+  </section>
+
+  <!-- Listado -->
+  <section class="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <h2 class="text-base font-semibold text-slate-900">Tus API Keys</h2>
+    {
+      keys.length === 0 ? (
+        <p class="mt-4 text-sm text-slate-500">Aun no has creado ninguna API Key.</p>
+      ) : (
+        <table class="mt-4 w-full text-left text-sm">
+          <thead class="text-xs uppercase text-slate-400">
+            <tr>
+              <th class="pb-2">Nombre</th>
+              <th class="pb-2">Prefijo</th>
+              <th class="pb-2">Ultimo uso</th>
+              <th class="pb-2">Estado</th>
+              <th class="pb-2" />
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {keys.map((k) => (
+              <tr>
+                <td class="py-2 font-medium text-slate-800">{k.name}</td>
+                <td class="py-2 font-mono text-slate-500">{k.keyPrefix}…</td>
+                <td class="py-2 text-slate-500">{fmt(k.lastUsedAt)}</td>
+                <td class="py-2">
+                  {k.revokedAt ? (
+                    <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
+                      Revocada
+                    </span>
+                  ) : (
+                    <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-700">
+                      Activa
+                    </span>
+                  )}
+                </td>
+                <td class="py-2 text-right">
+                  {!k.revokedAt && (
+                    <form method="POST">
+                      <input type="hidden" name="action" value="revoke" />
+                      <input type="hidden" name="id" value={k.id} />
+                      <button class="text-xs text-red-600 hover:underline" type="submit">
+                        Revocar
+                      </button>
+                    </form>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )
+    }
+  </section>
+
+  <!-- Snippets de conexion -->
+  <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <h2 class="text-base font-semibold text-slate-900">Conectar un cliente MCP</h2>
+    <p class="mt-2 text-sm text-slate-500">
+      Reemplaza <code class="rounded bg-slate-100 px-1">mcp_xxx</code> por tu API Key y envia las credenciales
+      Factus por headers. <strong>No se guardan en el servidor.</strong>
+    </p>
+
+    <h3 class="mt-5 text-sm font-semibold text-slate-700">Claude Code</h3>
+    <pre
+      class="mt-2 overflow-x-auto rounded-lg bg-slate-900 p-4 text-xs text-slate-100"><code>claude mcp add --transport http factus {mcpUrl} \
+  --header "Authorization: Bearer mcp_xxx" \
+  --header "x-factus-base-url: https://api-sandbox.factus.com.co" \
+  --header "x-factus-client-id: $FACTUS_CLIENT_ID" \
+  --header "x-factus-client-secret: $FACTUS_CLIENT_SECRET" \
+  --header "x-factus-email: $FACTUS_EMAIL" \
+  --header "x-factus-password: $FACTUS_PASSWORD"</code></pre>
+
+    <h3 class="mt-5 text-sm font-semibold text-slate-700">cURL (tools/list)</h3>
+    <pre
+      class="mt-2 overflow-x-auto rounded-lg bg-slate-900 p-4 text-xs text-slate-100"><code>curl -X POST "{mcpUrl}" \
+  -H "Authorization: Bearer mcp_xxx" \
+  -H "x-factus-client-id: $FACTUS_CLIENT_ID" \
+  -H "x-factus-client-secret: $FACTUS_CLIENT_SECRET" \
+  -H "x-factus-email: $FACTUS_EMAIL" \
+  -H "x-factus-password: $FACTUS_PASSWORD" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "Content-Type: application/json" \
+  --data '{`{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}`}'</code></pre>
+  </section>
+</Layout>
+
+<script>
+  import { authClient } from '../lib/auth-client';
+
+  document.getElementById('logout')?.addEventListener('click', async () => {
+    await authClient.signOut();
+    window.location.href = '/';
+  });
+</script>
