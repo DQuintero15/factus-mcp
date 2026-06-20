@@ -31,4 +31,4 @@ ENV HOST=0.0.0.0
 COPY --from=build /app /app
 WORKDIR /app
 EXPOSE 4321
-CMD ["node", "apps/web/dist/server/entry.mjs"]
+CMD ["sh", "-c", "cd /app/packages/db && /app/node_modules/.bin/prisma migrate deploy && cd /app && node apps/web/dist/server/entry.mjs"]
