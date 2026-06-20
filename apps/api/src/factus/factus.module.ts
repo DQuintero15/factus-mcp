@@ -1,9 +1,16 @@
 import { Global, Logger, Module } from '@nestjs/common';
 
 import { FactusSdkAdapter } from '@factus-mcp/core';
-import { FactusClient } from '@factus-mcp/factus-sdk';
+import { FactusClient, type FactusTokenCache } from '@factus-mcp/factus-sdk';
 
-import { APP_CONFIG, FACTUS_PORT, loadAppConfig, type AppConfig } from '../config/app-config.js';
+import {
+  APP_CONFIG,
+  FACTUS_PORT,
+  FACTUS_TOKEN_CACHE,
+  loadAppConfig,
+  type AppConfig,
+} from '../config/app-config.js';
+import { createRedisTokenCache } from './redis-token-cache.js';
 
 @Global()
 @Module({
@@ -13,15 +20,28 @@ import { APP_CONFIG, FACTUS_PORT, loadAppConfig, type AppConfig } from '../confi
       useFactory: loadAppConfig,
     },
     {
-      provide: FactusClient,
-      useFactory: (config: AppConfig) => {
-        const logger = new Logger('FactusHttpClient');
-        return new FactusClient({
-          tokenTtlSeconds: config.factusTokenTtlSeconds,
-          http: { logger },
+      provide: FACTUS_TOKEN_CACHE,
+      useFactory: async (config: AppConfig) => {
+        const logger = new Logger('FactusRedisTokenCache');
+        return createRedisTokenCache({
+          url: config.redisUrl,
+          keyPrefix: config.redisKeyPrefix,
+          onError: (err) => logger.error(`Redis token cache error: ${err.message}`),
         });
       },
       inject: [APP_CONFIG],
+    },
+    {
+      provide: FactusClient,
+      useFactory: (config: AppConfig, tokenCache: FactusTokenCache) => {
+        const logger = new Logger('FactusHttpClient');
+        return new FactusClient({
+          tokenTtlSeconds: config.factusTokenTtlSeconds,
+          tokenCache,
+          http: { logger },
+        });
+      },
+      inject: [APP_CONFIG, FACTUS_TOKEN_CACHE],
     },
     {
       provide: FACTUS_PORT,

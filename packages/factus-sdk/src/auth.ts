@@ -3,54 +3,53 @@ import { createHash } from 'node:crypto';
 import { FactusError } from './errors.js';
 import type { FactusCredentials, FactusTokenResponse } from './types.js';
 
-interface CachedToken {
-  accessToken: string;
-  expiresAt: number;
+export interface FactusTokenCache {
+  get(key: string): Promise<string | undefined>;
+  set(key: string, accessToken: string, ttlSeconds: number): Promise<void>;
+  delete(key: string): Promise<void>;
 }
 
 export interface TokenManagerOptions {
   ttlSeconds: number;
   skewSeconds?: number;
+  cache: FactusTokenCache;
 }
 
-/**
- * Gestiona el OAuth password-grant de Factus con cache en memoria por credencial.
- * - La clave de cache es un hash de (baseUrl + clientId + email); NUNCA se
- *   guarda en claro ni se persiste.
- * - Solo se cachea el access_token (no el refresh_token).
- */
 export class FactusTokenManager {
-  private readonly cache = new Map<string, CachedToken>();
   private readonly ttlSeconds: number;
   private readonly skewSeconds: number;
+  private readonly cache: FactusTokenCache;
 
   constructor(options: TokenManagerOptions) {
     this.ttlSeconds = options.ttlSeconds;
     this.skewSeconds = options.skewSeconds ?? 60;
+    this.cache = options.cache;
   }
 
   private cacheKey(creds: FactusCredentials): string {
     return createHash('sha256')
-      .update(`${creds.baseUrl}|${creds.clientId}|${creds.email}`)
+      .update(
+        `${creds.baseUrl}|${creds.clientId}|${creds.email}|${creds.clientSecret}|${creds.password}`,
+      )
       .digest('hex');
   }
 
   async getAccessToken(creds: FactusCredentials): Promise<string> {
     const key = this.cacheKey(creds);
-    const cached = this.cache.get(key);
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.accessToken;
+    const cached = await this.cache.get(key);
+    if (cached) {
+      return cached;
     }
 
     const token = await this.requestToken(creds);
     const lifetimeSeconds = Math.min(this.ttlSeconds, token.expires_in ?? this.ttlSeconds);
-    const expiresAt = Date.now() + Math.max(0, lifetimeSeconds - this.skewSeconds) * 1000;
-    this.cache.set(key, { accessToken: token.access_token, expiresAt });
+    const effectiveTtlSeconds = Math.max(1, lifetimeSeconds - this.skewSeconds);
+    await this.cache.set(key, token.access_token, effectiveTtlSeconds);
     return token.access_token;
   }
 
-  invalidate(creds: FactusCredentials): void {
-    this.cache.delete(this.cacheKey(creds));
+  async invalidate(creds: FactusCredentials): Promise<void> {
+    await this.cache.delete(this.cacheKey(creds));
   }
 
   private async requestToken(creds: FactusCredentials): Promise<FactusTokenResponse> {
