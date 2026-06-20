@@ -15,7 +15,7 @@ COPY packages/shared/package.json packages/shared/
 COPY packages/factus-sdk/package.json packages/factus-sdk/
 COPY packages/core/package.json packages/core/
 COPY apps/web/package.json apps/web/
-RUN echo "shamefully-hoist=true" >> .npmrc && pnpm install --frozen-lockfile
+RUN sed -i 's/shamefully-hoist=false/shamefully-hoist=true/' .npmrc && pnpm install --frozen-lockfile
 
 # ---------------------------------------------------------------------------
 FROM deps AS build
