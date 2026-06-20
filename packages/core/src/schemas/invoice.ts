@@ -4,108 +4,126 @@ const numericString = z.union([z.string(), z.number()]);
 const requiredText = (field: string) =>
   z
     .string({
-      required_error: `${field} es requerido; pidelo al usuario si no fue informado`,
+      required_error: `${field} is required; ask the user if it was not provided`,
     })
     .trim()
-    .min(1, `${field} no puede estar vacio; pidelo al usuario si no fue informado`);
+    .min(1, `${field} cannot be empty; ask the user if it was not provided`);
 const requiredNumber = (field: string) =>
   z.number({
-    required_error: `${field} es requerido; pidelo al usuario si no fue informado`,
+    required_error: `${field} is required; ask the user if it was not provided`,
   });
 const requiredNumericString = (field: string) =>
-  z.union([z.string().trim().min(1, `${field} no puede estar vacio`), z.number()], {
-    required_error: `${field} es requerido; pidelo al usuario si no fue informado`,
+  z.union([z.string().trim().min(1, `${field} cannot be empty`), z.number()], {
+    required_error: `${field} is required; ask the user if it was not provided`,
   });
 
 export const billPaymentDetailSchema = z
   .object({
-    payment_form: numericString.describe('1 = contado, 2 = credito'),
-    payment_method_code: z.string().describe('Codigo del medio de pago DIAN (p.ej. 10, 42)'),
+    payment_form: numericString.describe('1 = cash/immediate payment, 2 = credit'),
+    payment_method_code: z
+      .string()
+      .describe(
+        'DIAN payment method code, for example 10 or 42. Do not invent it; ask the user or verify the official code.',
+      ),
     reference_code: z.string().optional(),
     amount: numericString,
     due_date: z
       .string()
       .optional()
-      .describe('YYYY-MM-DD. Requerido cuando payment_form = 2 (credito)'),
+      .describe('YYYY-MM-DD. Required when payment_form = 2 (credit). Do not invent it.'),
   })
-  .strict('Parametro no soportado en payment_details; omitelo o pide el dato correcto al usuario');
+  .strict('Unsupported parameter in payment_details; omit it or ask the user for the correct data');
 
 export const billCustomerSchema = z
   .object({
     identification_document_code: z.string().optional(),
     identification: requiredText('customer.identification').describe(
-      'Numero de identificacion del adquirente. No lo inventes; si falta, preguntalo.',
+      'Customer identification number. Do not invent it; ask the user if missing.',
     ),
     dv: z.string().optional(),
-    company: z.string().optional().describe('Razon social (persona juridica)'),
+    company: z
+      .string()
+      .optional()
+      .describe('Legal company name for a legal entity. Do not invent it.'),
     trade_name: z.string().optional(),
-    names: z.string().optional().describe('Nombres (persona natural)'),
+    names: z
+      .string()
+      .optional()
+      .describe('Customer names for a natural person. Do not invent them.'),
     address: z.string().optional(),
     email: z.string().email().optional(),
     phone: z.string().optional(),
     legal_organization_code: z
       .string()
       .optional()
-      .describe('1 = persona juridica, 2 = persona natural'),
+      .describe('1 = legal entity, 2 = natural person. Do not invent it.'),
     tribute_code: z
       .string()
       .optional()
-      .describe('Codigo tributario. No lo inventes; omitelo si falta.'),
+      .describe('Tax tribute code. Do not invent it; omit it or ask if missing.'),
     municipality_code: z
       .string()
       .optional()
-      .describe('Codigo del municipio (catalogo estatico). Usa get_municipalities o preguntalo.'),
+      .describe(
+        'Municipality code from the static catalog. Use get_municipalities or ask the user; do not invent it.',
+      ),
   })
-  .strict('Parametro no soportado en customer; omitelo o pide el dato correcto al usuario');
+  .strict('Unsupported parameter in customer; omit it or ask the user for the correct data');
 
 export const billItemTaxSchema = z
   .object({
-    code: z.string().optional().describe('Codigo del tributo (01 = IVA). No lo inventes.'),
-    rate: z.string().optional().describe('Tarifa, p.ej. "19.00". No la inventes.'),
-    is_excluded: z.boolean().optional().describe('true para item excluido de impuestos'),
+    code: z.string().optional().describe('Tax code, for example 01 for VAT. Do not invent it.'),
+    rate: z.string().optional().describe('Tax rate, for example "19.00". Do not invent it.'),
+    is_excluded: z.boolean().optional().describe('true when the item is tax-excluded.'),
   })
-  .strict('Parametro no soportado en taxes; omitelo o pide el dato correcto al usuario');
+  .strict('Unsupported parameter in taxes; omit it or ask the user for the correct data');
 
 export const billItemSchema = z
   .object({
     code_reference: requiredText('items[].code_reference').describe(
-      'Codigo/referencia del item. No lo inventes; si falta, preguntalo.',
+      'Item code/reference. Do not invent it; ask the user if missing.',
     ),
     name: requiredText('items[].name').describe(
-      'Nombre del producto o servicio. No lo inventes; si falta, preguntalo.',
+      'Product or service name. Do not invent it; ask the user if missing.',
     ),
     quantity: requiredNumericString('items[].quantity').describe(
-      'Cantidad del item. No la inventes; si falta, preguntala.',
+      'Item quantity. Do not invent it; ask the user if missing.',
     ),
     discount_rate: numericString.optional(),
     price: requiredNumericString('items[].price').describe(
-      'Precio NETO antes de impuestos (regla V2). No uses precio con IVA incluido salvo que el usuario confirme que ya es neto.',
+      'NET price before taxes (Factus V2 rule). Do not use tax-included pricing unless the user confirms the value is already net.',
     ),
     unit_measure_code: requiredText('items[].unit_measure_code').describe(
-      'Codigo de unidad de medida (catalogo estatico). Usa get_unit_measures o preguntalo; no lo inventes.',
+      'Unit-measure code from the static catalog. Use get_unit_measures or ask the user; do not invent it.',
     ),
     standard_code: z
       .string()
       .optional()
-      .describe('Codigo estandar. No lo inventes; omitelo si falta.'),
+      .describe('Standard code. Do not invent it; omit it or ask if missing.'),
     is_excluded: z.boolean().optional(),
     taxes: z.array(billItemTaxSchema).optional(),
     withholding_taxes: z.array(z.object({ code: z.string(), rate: z.string() })).optional(),
   })
-  .strict('Parametro no soportado en items; omitelo o pide el dato correcto al usuario');
+  .strict('Unsupported parameter in items; omit it or ask the user for the correct data');
 
 export const createInvoiceSchema = z
   .object({
     reference_code: requiredText('reference_code').describe(
-      'Codigo de referencia unico de la factura. No lo inventes; si falta, preguntalo.',
+      'Unique invoice reference code. Do not invent it; ask the user if missing.',
     ),
-    document: z.string().optional().describe('Tipo de documento. "01" factura de venta'),
+    document: z
+      .string()
+      .optional()
+      .describe('Document type. "01" is a sales invoice. Do not invent it.'),
     numbering_range_id: requiredNumber('numbering_range_id')
       .int()
       .describe(
-        'ID del rango de numeracion a usar. Usa list_numbering_ranges o preguntalo; no lo inventes.',
+        'Numbering range ID to use. Use list_numbering_ranges and ask the user to choose; do not invent or auto-select it.',
       ),
-    operation_type: z.string().optional().describe('Tipo de operacion. "10" estandar'),
+    operation_type: z
+      .string()
+      .optional()
+      .describe('Operation type. "10" is standard. Do not invent it.'),
     send_email: z.boolean().optional(),
     cash_rounding_amount: z.string().optional(),
     observation: z.string().optional(),
@@ -117,24 +135,24 @@ export const createInvoiceSchema = z
       .optional(),
     payment_details: z.array(billPaymentDetailSchema).optional(),
     customer: billCustomerSchema,
-    items: z.array(billItemSchema).min(1, 'Se requiere al menos un item'),
+    items: z.array(billItemSchema).min(1, 'At least one item is required'),
   })
-  .strict('Parametro no soportado en la factura; omitelo o pide el dato correcto al usuario');
+  .strict('Unsupported parameter in the invoice; omit it or ask the user for the correct data');
 
 export const getInvoiceSchema = z.object({
-  number: z.string().describe('Numero de la factura (p.ej. SETP990001103)'),
+  number: z.string().describe('Invoice number, for example SETP990001103. Do not invent it.'),
 });
 
 export const listInvoicesSchema = z.object({
-  identification: z.string().optional().describe('Filtrar por identificacion del cliente'),
-  names: z.string().optional().describe('Filtrar por nombre del cliente'),
-  number: z.string().optional().describe('Filtrar por numero de factura'),
-  prefix: z.string().optional().describe('Filtrar por prefijo del rango'),
+  identification: z.string().optional().describe('Filter by customer identification.'),
+  names: z.string().optional().describe('Filter by customer name.'),
+  number: z.string().optional().describe('Filter by invoice number.'),
+  prefix: z.string().optional().describe('Filter by numbering range prefix.'),
   reference_code: z.string().optional(),
   status: z
     .union([z.literal(0), z.literal(1)])
     .optional()
-    .describe('1 = validado, 0 = no validado'),
+    .describe('1 = validated, 0 = unvalidated'),
   per_page: z.number().int().positive().optional(),
   start_date: z.string().optional().describe('YYYY-MM-DD'),
   end_date: z.string().optional().describe('YYYY-MM-DD'),
@@ -142,12 +160,17 @@ export const listInvoicesSchema = z.object({
 });
 
 export const sendInvoiceEmailSchema = z.object({
-  number: z.string().describe('Numero de la factura'),
-  email: z.string().email().describe('Correo destino'),
+  number: z
+    .string()
+    .describe('Invoice number to send. Do not invent it; show it and confirm before sending.'),
+  email: z
+    .string()
+    .email()
+    .describe('Destination email address. Do not invent it; show it and confirm before sending.'),
 });
 
 export const invoiceDownloadRefSchema = z.object({
-  number: z.string().describe('Numero de la factura'),
+  number: z.string().describe('Invoice number. Do not invent it.'),
 });
 
 export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;
