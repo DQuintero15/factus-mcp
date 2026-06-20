@@ -1,0 +1,33 @@
+# syntax=docker/dockerfile:1
+# Factus MCP Web — Astro SSR panel
+FROM node:20-slim AS base
+ENV PNPM_HOME=/pnpm
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+WORKDIR /app
+
+# ---------------------------------------------------------------------------
+FROM base AS deps
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc turbo.json tsconfig.base.json ./
+COPY packages/db/package.json packages/db/
+COPY packages/shared/package.json packages/shared/
+COPY packages/factus-sdk/package.json packages/factus-sdk/
+COPY packages/core/package.json packages/core/
+COPY apps/web/package.json apps/web/
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+
+# ---------------------------------------------------------------------------
+FROM deps AS build
+COPY . .
+ENV NODE_ENV=production
+ENV DATABASE_URL="postgresql://build:build@localhost:5432/build"
+RUN pnpm build
+
+# ---------------------------------------------------------------------------
+FROM base AS runtime
+ENV NODE_ENV=production
+ENV HOST=0.0.0.0
+COPY --from=build /app /app
+WORKDIR /app
+EXPOSE 4321
+CMD ["node", "apps/web/dist/server/entry.mjs"]
