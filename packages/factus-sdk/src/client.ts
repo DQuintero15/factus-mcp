@@ -1,13 +1,17 @@
-import { FactusTokenManager } from './auth.js';
+import { FactusTokenManager, type FactusTokenCache } from './auth.js';
 import { FactusError } from './errors.js';
 import { FactusHttpClient, type HttpClientOptions } from './http.js';
+import { AdjustmentNotesResource } from './resources/adjustment-notes.js';
 import { BillsResource } from './resources/bills.js';
 import { CompaniesResource } from './resources/companies.js';
+import { CreditNotesResource } from './resources/credit-notes.js';
 import { NumberingRangesResource } from './resources/numbering-ranges.js';
+import { SupportDocumentsResource } from './resources/support-documents.js';
 import type { FactusCredentials } from './types.js';
 
 export interface FactusClientOptions {
   tokenTtlSeconds: number;
+  tokenCache: FactusTokenCache;
   http?: HttpClientOptions;
 }
 
@@ -19,7 +23,7 @@ export interface AuthedRequestOptions {
 }
 
 /**
- * Cliente Factus V2 propio. Maneja OAuth por request (con cache en memoria),
+ * Cliente Factus V2 propio. Maneja OAuth por request (con cache inyectada),
  * resiliencia y mapeo de errores. Las credenciales se reciben por llamada y
  * nunca se persisten.
  */
@@ -28,16 +32,23 @@ export class FactusClient {
   private readonly http: FactusHttpClient;
 
   readonly bills: BillsResource;
+  readonly creditNotes: CreditNotesResource;
+  readonly supportDocuments: SupportDocumentsResource;
+  readonly adjustmentNotes: AdjustmentNotesResource;
   readonly numberingRanges: NumberingRangesResource;
   readonly companies: CompaniesResource;
 
   constructor(options: FactusClientOptions) {
     this.tokenManager = new FactusTokenManager({
       ttlSeconds: options.tokenTtlSeconds,
+      cache: options.tokenCache,
     });
     this.http = new FactusHttpClient(options.http);
 
     this.bills = new BillsResource(this);
+    this.creditNotes = new CreditNotesResource(this);
+    this.supportDocuments = new SupportDocumentsResource(this);
+    this.adjustmentNotes = new AdjustmentNotesResource(this);
     this.numberingRanges = new NumberingRangesResource(this);
     this.companies = new CompaniesResource(this);
   }
@@ -55,7 +66,7 @@ export class FactusClient {
       });
     } catch (err) {
       if (err instanceof FactusError && err.kind === 'auth') {
-        this.tokenManager.invalidate(creds);
+        await this.tokenManager.invalidate(creds);
         const fresh = await this.tokenManager.getAccessToken(creds);
         return this.http.request<T>({
           ...opts,

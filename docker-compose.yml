@@ -16,6 +16,19 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:7-alpine
+    container_name: factus-mcp-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - factus_redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   api:
     build:
       context: .
@@ -24,12 +37,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       NODE_ENV: production
       PORT: 3000
       DATABASE_URL: postgresql://factus:factus@postgres:5432/factus_mcp?schema=public
       FACTUS_DEFAULT_BASE_URL: ${FACTUS_DEFAULT_BASE_URL:-https://api-sandbox.factus.com.co}
       FACTUS_TOKEN_TTL_SECONDS: ${FACTUS_TOKEN_TTL_SECONDS:-3000}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      REDIS_KEY_PREFIX: ${REDIS_KEY_PREFIX:-factus-mcp}
     ports:
       - '3000:3000'
 
@@ -56,3 +73,4 @@ services:
 
 volumes:
   factus_pgdata:
+  factus_redisdata:

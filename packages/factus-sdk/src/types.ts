@@ -40,6 +40,7 @@ export interface BillCustomer {
   legal_organization_code?: string;
   tribute_code?: string;
   municipality_code?: string;
+  country_code?: string;
 }
 
 export interface BillItemTax {
@@ -86,6 +87,51 @@ export interface ListBillsFilters {
   start_date?: string;
   end_date?: string;
   page?: number;
+}
+
+export interface ListDocumentFilters extends ListBillsFilters {}
+
+export interface CreateCreditNoteRequest {
+  reference_code: string;
+  bill_id?: number;
+  bill_number?: string;
+  numbering_range_id?: number;
+  correction_concept_code: string;
+  customization_id?: string;
+  payment_details: BillPaymentDetail[];
+  cash_rounding_amount?: string;
+  observation?: string;
+  health?: Record<string, unknown>;
+  establishment?: Record<string, unknown>;
+  billing_period?: Record<string, unknown>;
+  allowance_charges?: Array<Record<string, unknown>>;
+  customer?: BillCustomer;
+  items: BillItem[];
+}
+
+export interface CreateSupportDocumentRequest {
+  reference_code: string;
+  numbering_range_id?: number;
+  created_time?: string;
+  observation?: string;
+  payment_details: BillPaymentDetail[];
+  cash_rounding_amount?: string;
+  establishment?: Record<string, unknown>;
+  provider: BillCustomer;
+  items: BillItem[];
+}
+
+export interface CreateAdjustmentNoteRequest {
+  reference_code: string;
+  support_document_number: string;
+  correction_concept_code: string;
+  numbering_range_id?: number;
+  created_time?: string;
+  observation?: string;
+  payment_details: BillPaymentDetail[];
+  cash_rounding_amount?: string;
+  provider: BillCustomer;
+  items: BillItem[];
 }
 
 export interface ListNumberingRangesFilters {
@@ -138,6 +184,7 @@ export interface FactusDownloadResponse {
     file_name?: string;
     pdf_base_64_encoded?: string;
     xml_base_64_encoded?: string;
+    attached_document_base_64_encoded?: string;
     [key: string]: unknown;
   };
   [key: string]: unknown;
