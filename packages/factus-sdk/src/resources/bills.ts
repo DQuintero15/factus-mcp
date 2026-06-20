@@ -73,4 +73,14 @@ export class BillsResource {
       path: `/v2/bills/${encodeURIComponent(number)}/download-xml`,
     });
   }
+
+  async downloadAttachedDocumentXml(
+    creds: FactusCredentials,
+    number: string,
+  ): Promise<FactusDownloadResponse> {
+    return this.client.authedRequest(creds, {
+      method: 'GET',
+      path: `/v2/bills/${encodeURIComponent(number)}/download-attached-document-xml`,
+    });
+  }
 }
