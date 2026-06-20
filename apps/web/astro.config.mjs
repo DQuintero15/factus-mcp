@@ -7,7 +7,7 @@ export default defineConfig({
   output: 'server',
   adapter: node({ mode: 'standalone' }),
   integrations: [tailwind()],
-  server: { host: true, port: Number(process.env.WEB_PORT ?? 4321) },
+  server: { host: true, port: Number(process.env.PORT ?? 4321) },
   vite: {
     ssr: {
       // No bundlear Prisma ni el paquete db: el cliente generado referencia
