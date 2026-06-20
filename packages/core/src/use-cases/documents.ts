@@ -181,6 +181,12 @@ async function downloadDocument(
   return port.downloadAdjustmentNoteXml(creds, number);
 }
 
+const MIME_TYPES: Record<DownloadKind, string> = {
+  pdf: 'application/pdf',
+  xml: 'application/xml',
+  attached_document_xml: 'application/xml',
+};
+
 function toDownloadReference(
   documentType: DocumentType,
   number: string,
@@ -201,8 +207,10 @@ function toDownloadReference(
     fileName: typeof data.file_name === 'string' ? data.file_name : `${number}.${extension(type)}`,
     source,
     sizeBytes,
+    content: available ? base64 : undefined,
+    mimeType: MIME_TYPES[type],
     hint: available
-      ? `El archivo ${type} esta disponible en Factus. Descargalo con tus credenciales desde GET ${source}. El MCP no reenvia binarios.`
+      ? `El archivo ${type} esta disponible como base64 en el campo "content". Puedes decodificarlo para obtener el archivo.`
       : `Factus no reporto contenido ${type} descargable para ${documentType} ${number}.`,
   };
 }

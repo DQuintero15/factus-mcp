@@ -9,6 +9,8 @@ export interface DownloadReference {
   fileName: string;
   source: string;
   sizeBytes?: number;
+  content?: string;
+  mimeType?: string;
   hint: string;
 }
 
