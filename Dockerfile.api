@@ -14,7 +14,7 @@ COPY packages/shared/package.json packages/shared/
 COPY packages/factus-sdk/package.json packages/factus-sdk/
 COPY packages/core/package.json packages/core/
 COPY apps/api/package.json apps/api/
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # ---------------------------------------------------------------------------
 FROM deps AS build
