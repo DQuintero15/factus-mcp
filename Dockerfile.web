@@ -22,7 +22,7 @@ FROM deps AS build
 COPY . .
 ENV NODE_ENV=production
 ENV DATABASE_URL="postgresql://build:build@localhost:5432/build"
-RUN pnpm build
+RUN pnpm turbo run build --filter=@factus-mcp/web...
 
 # ---------------------------------------------------------------------------
 FROM base AS runtime
