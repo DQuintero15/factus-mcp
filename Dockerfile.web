@@ -4,6 +4,7 @@ FROM node:20-slim AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 # ---------------------------------------------------------------------------
@@ -14,7 +15,7 @@ COPY packages/shared/package.json packages/shared/
 COPY packages/factus-sdk/package.json packages/factus-sdk/
 COPY packages/core/package.json packages/core/
 COPY apps/web/package.json apps/web/
-RUN pnpm install --frozen-lockfile
+RUN echo "shamefully-hoist=true" >> .npmrc && pnpm install --frozen-lockfile
 
 # ---------------------------------------------------------------------------
 FROM deps AS build
