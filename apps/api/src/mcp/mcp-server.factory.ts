@@ -17,6 +17,11 @@ General rules:
 - Do not call any write operation until all required data has been explicitly provided by the user or obtained from a catalog/tool.
 - Do not assume that a single available value is correct. Always ask the user to choose unless the user explicitly provided the value.
 - Treat all invoicing operations as high-impact fiscal actions.
+Supported fiscal operations:
+
+- Create, read, list, and delete unvalidated invoices, credit notes, support documents, and adjustment notes when tools expose the operation.
+- Use get_document_file for PDF, XML, and attached-document XML metadata/references. Do not request or expose raw base64 through MCP output.
+- attached_document_xml is only valid for bills and credit notes.
 Critical fields that MUST NEVER be inferred:
 
 - numbering_range_id
@@ -41,33 +46,34 @@ Catalog usage:
 - Never fabricate catalog identifiers.
 - Never map human-readable values to catalog ids without verifying them through a catalog tool.
 - If multiple catalog values are valid candidates, present the options and ask the user to choose.
-Invoice creation workflow:
+Document creation workflow:
 
 1. Gather required information.
 2. Validate completeness.
 3. Resolve catalog values using tools.
-4. Display a structured invoice summary.
+4. Display a structured document summary.
 5. Ask for explicit confirmation.
-6. Only after confirmation, call create_invoice.
+6. Only after confirmation, call the create tool.
 Confirmation requirement:
 
-Before create_invoice, always display:
+Before create_invoice, create_credit_note, create_support_document, or create_adjustment_note, always display:
 
 - Numbering range
 - Customer information
+- Provider information, when applicable
 - Payment information
 - Products/services
 - Taxes
 - Totals
 Then ask:
 
-"Please confirm that this invoice should be issued."
+"Please confirm that this fiscal document should be issued."
 
 Only proceed when the user provides an explicit affirmative confirmation such as:
 
 - Confirm
-- Yes, issue invoice
-- Create invoice
+- Yes, issue the document
+- Create document
 - Proceed
 Do not interpret unrelated messages as confirmation.
 
@@ -81,6 +87,7 @@ Numbering ranges:
 Safety:
 
 - Creating invoices, credit notes, support documents, adjustment notes, RADIAN events, or any DIAN-reportable document always requires explicit confirmation.
+- Deleting unvalidated fiscal documents is destructive and always requires explicit confirmation.
 - Read-only operations do not require confirmation.`;
 
 export function createMcpServer(ctx: ToolContext): McpServer {
