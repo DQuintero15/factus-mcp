@@ -1,0 +1,15 @@
+---
+import Brand from './Brand.astro';
+
+interface Props {
+  t: Record<string, string>;
+}
+
+const { t } = Astro.props;
+---
+
+<footer class="site-footer section-appear">
+  <a href="/" class="brand-link"><Brand small /></a>
+  <p data-i18n="footer">{t.footer}</p>
+  <a href="https://github.com/DQuintero15/factus-mcp" target="_blank" rel="noopener">GitHub</a>
+</footer>

@@ -1,0 +1,42 @@
+---
+interface Props {
+  t: Record<string, string>;
+  groups: readonly { label: string; description: string; descs: readonly string[] }[];
+  tools: readonly { name: string; method: string; group: number; confirm: boolean; risk: string }[];
+}
+
+const { t, groups, tools } = Astro.props;
+---
+
+<section id="tools" class="section section-appear">
+  <div class="section-heading section-heading--wide">
+    <p class="section-kicker" data-i18n="toolsKicker">{t.toolsKicker}</p>
+    <h2 data-i18n="toolsTitle">{t.toolsTitle}</h2>
+    <p data-i18n="toolsSub">{t.toolsSub}</p>
+  </div>
+  <div class="tool-board">
+    {groups.map((group, groupIndex) => (
+      <article class="tool-group">
+        <header>
+          <div>
+            <h3>{group.label}</h3>
+            <p>{group.description}</p>
+          </div>
+          <span>{tools.filter((tool) => tool.group === groupIndex).length} tools</span>
+        </header>
+        <div class="tool-cards">
+          {tools.filter((tool) => tool.group === groupIndex).map((tool, index) => (
+            <div class="tool-card">
+              <div class="tool-card-top">
+                <span class:list={['method-badge', `method-${tool.method}`]}>{tool.method}</span>
+                <span class={`risk-dot risk-${tool.risk}`} aria-hidden="true"></span>
+              </div>
+              <h4>{tool.name}</h4>
+              <p>{group.descs[index]}</p>
+            </div>
+          ))}
+        </div>
+      </article>
+    ))}
+  </div>
+</section>
