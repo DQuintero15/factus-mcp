@@ -1,0 +1,10 @@
+---
+interface Props {
+  small?: boolean;
+}
+
+const { small = false } = Astro.props;
+---
+
+<span class:list={['brand-mark', { 'brand-mark--small': small }]}>f</span>
+<span class="brand-word">factus<span>/mcp</span></span>

@@ -1,0 +1,51 @@
+---
+interface Props {
+  t: Record<string, string>;
+  scenarios: readonly { key: string; label: string; prompt: string; toolName: string; response: string }[];
+}
+
+const { t, scenarios } = Astro.props;
+const initialScenario = scenarios[0];
+---
+
+<section id="demo" class="section demo-section section-appear">
+  <div class="section-heading">
+    <p class="section-kicker" data-i18n="demoKicker">{t.demoKicker}</p>
+    <h2 data-i18n="demoTitle">{t.demoTitle}</h2>
+    <p data-i18n="demoSub">{t.demoSub}</p>
+  </div>
+  <div class="demo-scenario-strip" aria-label={t.demoTitle}>
+    {scenarios.map((scenario, index) => (
+      <button
+        class:list={['demo-scenario-chip', { active: index === 0 }]}
+        type="button"
+        data-scenario={scenario.key}
+        aria-pressed={index === 0 ? 'true' : 'false'}
+      >
+        <span>{scenario.label}</span>
+      </button>
+    ))}
+  </div>
+  <div class="demo-stage" id="demo-stage" aria-live="polite">
+    <div class="demo-top terminal-bar">
+      <span></span><span></span><span></span>
+      <strong data-i18n="demoTerminalTitle">{t.demoTerminalTitle}</strong>
+      <span class="status-pill running" id="demo-status">{t.demoThinking}</span>
+    </div>
+    <div class="demo-terminal-body">
+      <p class="demo-terminal-title" id="demo-title">{initialScenario?.label}</p>
+      <div class="demo-terminal-line demo-terminal-line--prompt active" data-demo-step="0">
+        <span class="terminal-prompt">$</span>
+        <p class="agent-prompt"><span id="demo-prompt">{t.demoIdle}</span><span class="typing-caret" aria-hidden="true"></span></p>
+      </div>
+      <div class="demo-terminal-line demo-terminal-line--tool" data-demo-step="1">
+        <span class="terminal-prompt">></span>
+        <p id="demo-tool"></p>
+      </div>
+      <div class="demo-terminal-line demo-terminal-line--response" data-demo-step="2">
+        <span class="terminal-prompt">assistant</span>
+        <p><span id="demo-response"></span><span class="typing-caret" aria-hidden="true"></span></p>
+      </div>
+    </div>
+  </div>
+</section>

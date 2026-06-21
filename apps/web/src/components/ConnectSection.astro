@@ -1,0 +1,26 @@
+---
+interface Props {
+  t: Record<string, string>;
+}
+
+const { t } = Astro.props;
+---
+
+<section id="connect" class="section connect-section section-appear">
+  <div class="section-heading">
+    <p class="section-kicker" data-i18n="connectKicker">{t.connectKicker}</p>
+    <h2 data-i18n="connectTitle">{t.connectTitle}</h2>
+    <p data-i18n="connectSub">{t.connectSub}</p>
+  </div>
+  <div class="code-panel">
+    <div class="connect-tabs" id="connect-tabs">
+      <button type="button" class="active" data-tab="claude">Claude Code</button>
+      <button type="button" data-tab="desktop">Claude Desktop</button>
+      <button type="button" data-tab="codex">Codex</button>
+      <button type="button" data-tab="curl">cURL</button>
+    </div>
+    <pre><code id="connect-code"></code></pre>
+    <button type="button" class="copy-button" id="connect-copy" data-i18n="copy">{t.copy}</button>
+  </div>
+  <p class="connect-note" data-i18n="connectNote">{t.connectNote}</p>
+</section>

@@ -1,0 +1,29 @@
+---
+interface Props {
+  t: Record<string, string>;
+}
+
+const { t } = Astro.props;
+---
+
+<section class="hero section-appear" id="hero">
+  <div class="hero-grid" aria-hidden="true"></div>
+  <div class="hero-glow" aria-hidden="true"></div>
+  <p class="hero-badge"><span></span><span data-i18n="heroBadge">{t.heroBadge}</span></p>
+  <h1>
+    <span data-i18n="heroTitle">{t.heroTitle}</span><br />
+    <span data-i18n="heroTitle2">{t.heroTitle2}</span>
+  </h1>
+  <p class="hero-copy" data-i18n="heroSub">{t.heroSub}</p>
+  <div class="hero-actions">
+    <a href="#connect" class="button button--solid" data-i18n="heroCta1">{t.heroCta1}</a>
+    <a href="https://github.com/DQuintero15/factus-mcp" target="_blank" rel="noopener" class="button button--ghost" data-i18n="heroCta2">{t.heroCta2}</a>
+  </div>
+  <div class="terminal-card" aria-label={t.heroTerminal}>
+    <div class="terminal-bar"><span></span><span></span><span></span><strong data-i18n="heroTerminal">{t.heroTerminal}</strong></div>
+    <pre><code><span>claude mcp add</span> --transport http factus "$FACTUS_MCP_URL" \
+  --header "Authorization: Bearer $FACTUS_MCP_API_KEY" \
+  --header "x-factus-base-url: $FACTUS_BASE_URL" \
+  --header "x-factus-client-id: $FACTUS_CLIENT_ID"</code></pre>
+  </div>
+</section>

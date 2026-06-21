@@ -1,0 +1,45 @@
+---
+interface Props {
+  t: Record<string, string>;
+}
+
+const { t } = Astro.props;
+
+const nodes = [
+  { key: 'flowNodeAgent', meta: '01', duration: '10s', detail: 'flowNodeAgentText' },
+  { key: 'flowNodeValidation', meta: '02', duration: '20s', detail: 'flowNodeValidationText' },
+  { key: 'flowNodeFactus', meta: '03', duration: '30s', detail: 'flowNodeFactusText' },
+  { key: 'flowNodeDian', meta: '04', duration: '40s', detail: 'flowNodeDianText' },
+] as const;
+---
+
+<section id="architecture" class="section architecture-section section-appear" aria-labelledby="architecture-title">
+  <div class="section-heading section-heading--wide">
+    <p class="section-kicker" data-i18n="flowKicker">{t.flowKicker}</p>
+    <h2 id="architecture-title" data-i18n="flowTitle">{t.flowTitle}</h2>
+    <p data-i18n="flowSub">{t.flowSub}</p>
+  </div>
+  <div class="flow-shell" aria-label={t.flowAria}>
+    <div class="flow-orbit" aria-hidden="true"></div>
+    <div class="flow-track" role="list">
+      {nodes.map((node, index) => (
+        <article class="flow-node" role="listitem" style={`--flow-index: ${index}`}>
+          <div class="flow-node__marker" aria-hidden="true">
+            <span>{node.meta}</span>
+          </div>
+          <div class="flow-node__body">
+            <span class="flow-node__duration">{node.duration}</span>
+            <h3 data-i18n={node.key}>{t[node.key]}</h3>
+            <p data-i18n={node.detail}>{t[node.detail]}</p>
+          </div>
+          {index < nodes.length - 1 && <span class="flow-connector" aria-hidden="true"></span>}
+        </article>
+      ))}
+    </div>
+    <div class="flow-proof">
+      <span data-i18n="flowProofLabel">{t.flowProofLabel}</span>
+      <strong data-i18n="flowProofTitle">{t.flowProofTitle}</strong>
+      <p data-i18n="flowProofText">{t.flowProofText}</p>
+    </div>
+  </div>
+</section>
