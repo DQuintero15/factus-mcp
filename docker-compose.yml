@@ -29,48 +29,6 @@ services:
       timeout: 5s
       retries: 10
 
-  api:
-    build:
-      context: .
-      target: api
-    container_name: factus-mcp-api
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    environment:
-      NODE_ENV: production
-      PORT: 3000
-      DATABASE_URL: postgresql://factus:factus@postgres:5432/factus_mcp?schema=public
-      FACTUS_DEFAULT_BASE_URL: ${FACTUS_DEFAULT_BASE_URL:-https://api-sandbox.factus.com.co}
-      FACTUS_TOKEN_TTL_SECONDS: ${FACTUS_TOKEN_TTL_SECONDS:-3000}
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
-      REDIS_KEY_PREFIX: ${REDIS_KEY_PREFIX:-factus-mcp}
-    ports:
-      - '3000:3000'
-
-  web:
-    build:
-      context: .
-      target: web
-    container_name: factus-mcp-web
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      NODE_ENV: production
-      HOST: 0.0.0.0
-      PORT: 4321
-      DATABASE_URL: postgresql://factus:factus@postgres:5432/factus_mcp?schema=public
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?define BETTER_AUTH_SECRET en .env}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:4321}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?define GOOGLE_CLIENT_ID en .env}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?define GOOGLE_CLIENT_SECRET en .env}
-      PUBLIC_MCP_URL: ${PUBLIC_MCP_URL:-http://localhost:3000/mcp}
-    ports:
-      - '4321:4321'
-
 volumes:
   factus_pgdata:
   factus_redisdata:
