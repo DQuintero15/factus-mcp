@@ -1,12 +1,14 @@
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
+import { config } from 'dotenv';
 import { defineConfig, env } from 'prisma/config';
 
-/**
- * Configuracion de Prisma 7. En v7 la URL de conexion ya no vive en
- * schema.prisma; se define aqui (para CLI/Migrate) y en runtime se pasa un
- * driver adapter al PrismaClient (ver src/index.ts).
- */
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Load .env from monorepo root (packages/db/../../.env)
+config({ path: path.join(__dirname, '..', '..', '.env') });
+
 export default defineConfig({
   schema: path.join('prisma', 'schema.prisma'),
   migrations: {
